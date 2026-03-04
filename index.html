@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dynamic Multi-Layer Overlayer (Auto-Save Enabled)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@400;700&family=Bebas+Neue&family=Inter:wght@400;900&family=Montserrat:wght@400;700;900&family=Playfair+Display:ital,wght@0,700;1,700&family=Roboto+Condensed:wght@400;700&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Sinhala Unicode Fonts (UN-Series) */
+        @font-face { font-family: 'UN-Abhaya'; src: url('https://font.akasa.lk/fonts/UN-Abhaya.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Derana'; src: url('https://font.akasa.lk/fonts/UN-Derana.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Samantha'; src: url('https://font.akasa.lk/fonts/UN-Samantha.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Ganganee'; src: url('https://font.akasa.lk/fonts/UN-Ganganee.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Gemunu'; src: url('https://font.akasa.lk/fonts/UN-Gemunu.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Isiwara'; src: url('https://font.akasa.lk/fonts/UN-Isiwara.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Rajantha'; src: url('https://font.akasa.lk/fonts/UN-Rajantha.ttf') format('truetype'); font-display: swap; }
+
+        body { overflow: hidden; touch-action: manipulation; }
+        
+        .canvas-container {
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            background-color: #cbd5e1;
+            position: relative;
+            width: 100%;
+            height: 100%; 
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            padding: 20px;
+        }
+        
+        canvas {
+            cursor: move;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            background: white;
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+        }
+
+        .layer-card {
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .layer-card.active {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .image-thumb-container {
+            position: relative;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .image-thumb {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .image-thumb:hover { transform: scale(1.05); }
+        .image-thumb.active { border-color: #3b82f6; }
+
+        .thumb-label {
+            font-size: 8px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            max-width: 70px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            outline: none;
+            padding: 0;
+        }
+
+        .zoom-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 101;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .d-pad {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 8px;
+            z-index: 101;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .d-btn {
+            width: 42px;
+            height: 42px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 18px;
+            color: #1e293b;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .d-btn:active { background: #f1f5f9; transform: scale(0.95); }
+
+        .mobile-tab-content { display: none; }
+        .mobile-tab-content.active { display: flex; }
+        
+        @media (min-width: 1024px) {
+            .mobile-tab-content { display: flex !important; }
+            .mobile-nav { display: none; }
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+        .step-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #475569;
+            transition: all 0.1s;
+        }
+        .step-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.9);
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            min-height: 44px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans overflow-hidden">
+
+    <div id="loadingOverlay">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p class="mt-4 font-medium text-slate-600">Restoring Data...</p>
+        </div>
+    </div>
+
+    <div class="h-screen flex flex-col p-2 md:p-4 gap-4">
+        <header class="flex justify-between items-center shrink-0">
+            <div>
+                <h1 class="text-lg md:text-xl font-bold text-slate-800">Overlay Designer</h1>
+                <p class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Auto-Save Enabled</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="shareBtn" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200 active:scale-95 transition-transform flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                    Share
+                </button>
+                <button id="downloadBtn" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg active:scale-95 transition-transform">Download</button>
+            </div>
+        </header>
+
+        <div class="flex-grow flex flex-col lg:flex-row gap-4 min-h-0">
+            <div id="sidebar" class="lg:w-80 flex flex-col gap-4 shrink-0 overflow-y-auto pr-1">
+                <div id="tab-images" class="mobile-tab-content flex-col gap-4 active">
+                    <div id="imageDetails" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Image Info</h3>
+                            <button onclick="clearAllData()" class="text-red-500 font-bold text-[10px] uppercase">Clear All</button>
+                        </div>
+                        <input type="text" id="imageNameEdit" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Image Name">
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                        <label class="cursor-pointer bg-blue-600 text-white w-full py-3 rounded-xl font-bold text-center block shadow-md hover:bg-blue-700 transition-colors">
+                            + Add Images
+                            <input type="file" id="imageInput" accept="image/*" multiple class="hidden" />
+                        </label>
+                        <div id="thumbList" class="flex gap-4 overflow-x-auto mt-4 py-2 scrollbar-hide"></div>
+                    </div>
+                </div>
+
+                <div id="tab-styles" class="mobile-tab-content flex-col gap-4">
+                    <div id="styleEditor" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Style</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-bold text-slate-500">BOLD</span>
+                                <input type="checkbox" id="editBold" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <textarea id="editContent" rows="2" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" placeholder="Enter text..."></textarea>
+                            
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Select Date</label>
+                                <input type="date" id="editDateOnly" class="w-full p-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        
+                        <select id="editFont" class="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none bg-slate-50">
+                            <optgroup label="Sinhala">
+                                <option value="'UN-Abhaya', sans-serif">UN-Abhaya</option>
+                                <option value="'UN-Samantha', sans-serif">UN-Samantha</option>
+                                <option value="'UN-Derana', sans-serif">UN-Derana</option>
+                                <option value="'UN-Ganganee', sans-serif">UN-Ganganee</option>
+                                <option value="'UN-Gemunu', sans-serif">UN-Gemunu</option>
+                                <option value="'UN-Isiwara', sans-serif">UN-Isiwara</option>
+                                <option value="'UN-Rajantha', sans-serif">UN-Rajantha</option>
+                            </optgroup>
+                            <optgroup label="English">
+                                <option value="'Inter', sans-serif">Inter</option>
+                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                                <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                            </optgroup>
+                        </select>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3">
+                                <input type="color" id="editColor" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent">
+                                <div class="flex-grow">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-[9px] font-bold text-slate-400 uppercase">Size Step (1-100)</label>
+                                        <span id="sizeValueBadge" class="text-blue-600 text-[10px] font-bold">20</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="changeFontSize(-1)" class="step-btn">−</button>
+                                        <input type="range" id="editSize" min="1" max="100" step="1" class="flex-grow h-1 accent-blue-600">
+                                        <button onclick="changeFontSize(1)" class="step-btn">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex-grow">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Layers</h3>
+                            <div class="flex gap-2">
+                                <button onclick="addNewDateLayer()" class="text-blue-600 font-bold text-[10px] border border-blue-100 px-2 py-1 rounded flex items-center gap-1">
+                                    <span class="text-[12px]">📅</span> Date
+                                </button>
+                                <button id="addLayerBtn" class="text-blue-600 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded">+ Text</button>
+                            </div>
+                        </div>
+                        <div id="layersContainer" class="space-y-2 max-h-64 overflow-y-auto scrollbar-hide pr-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="viewport" class="flex-grow relative bg-slate-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
+                <div id="zoomOverlay" class="zoom-overlay hidden">
+                    <button onclick="adjustZoom(-0.1)" class="w-8 h-8 rounded bg-white font-bold">-</button>
+                    <span id="zoomBadge" class="text-[10px] font-bold min-w-[40px] text-center">100%</span>
+                    <button onclick="adjustZoom(0.1)" class="w-8 h-8 rounded bg-white font-bold">+</button>
+                </div>
+
+                <div id="canvasWrapper" class="canvas-container">
+                    <div id="placeholderText" class="text-slate-400 text-center p-8">
+                        <p class="font-bold">No Image Selected</p>
+                        <p class="text-sm opacity-60">Upload photos to start</p>
+                    </div>
+                    <canvas id="canvas" class="hidden"></canvas>
+                    
+                    <div id="fineTuneControls" class="d-pad hidden">
+                        <button class="d-btn" style="grid-area: up" onmousedown="handleDPadDown(0, -1)" ontouchstart="handleDPadDown(0, -1)" onmouseup="handleDPadUp()" ontouchend="handleDPadUp()">↑</button>
+                        <button class="d-btn" style="grid-area: left" onmousedown="handleDPadDown(-1, 0)" ontouchstart="handleDPadDown(-1, 0)" onmouseup="handleDPadUp()" ontouchend="handleDPadUp()">←</button>
+                        <button class="d-btn" style="grid-area: right" onmousedown="handleDPadDown(1, 0)" ontouchstart="handleDPadDown(1, 0)" onmouseup="handleDPadUp()" ontouchend="handleDPadUp()">→</button>
+                        <button class="d-btn" style="grid-area: down" onmousedown="handleDPadDown(0, 1)" ontouchstart="handleDPadDown(0, 1)" onmouseup="handleDPadUp()" ontouchend="handleDPadUp()">↓</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="mobile-nav flex lg:hidden bg-white border-t border-slate-200 -mx-2 -mb-2 px-4 py-2 justify-around shrink-0 z-50">
+            <button onclick="setTab('images')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 p-2" id="nav-images">
+                <span class="text-xs font-bold">Files</span>
+            </button>
+            <button onclick="setTab('canvas')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 p-2" id="nav-canvas">
+                <span class="text-xs font-bold">Canvas</span>
+            </button>
+            <button onclick="setTab('styles')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 p-2" id="nav-styles">
+                <span class="text-xs font-bold">Text</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'image_overlayer_data';
+        const DEFAULT_COLOR = '#0000C8'; // RGB 0 0 200
+        let pages = []; 
+        let currentIndex = -1;
+        let activeLayerIndex = -1; 
+        let draggingLayerIndex = -1;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        let moveInterval = null, moveTimeout = null;
+        let zoomLevel = 1.0;
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function formatDateToDot(date) {
+            if (!date || isNaN(date.getTime())) return "";
+            const y = date.getFullYear();
+            const m = (date.getMonth() + 1).toString().padStart(2, '0');
+            const d = date.getDate().toString().padStart(2, '0');
+            return `${y}.${m}.${d}`;
+        }
+
+        function parseDotToHyphen(str) {
+            if (!str) return "";
+            const parts = str.split('.');
+            if (parts.length === 3) {
+                return `${parts[0]}-${parts[1]}-${parts[2]}`;
+            }
+            return "";
+        }
+
+        function saveData() {
+            try {
+                const dataToSave = pages.map(p => ({
+                    name: p.name,
+                    dataUrl: p.dataUrl,
+                    layers: p.layers
+                }));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+            } catch (e) {
+                console.warn("Storage quota exceeded.", e);
+            }
+        }
+
+        async function loadData() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return;
+            try {
+                const rawPages = JSON.parse(stored);
+                const loadedPages = [];
+                for (const p of rawPages) {
+                    const img = await new Promise((res) => {
+                        const i = new Image();
+                        i.onload = () => res(i);
+                        i.src = p.dataUrl;
+                    });
+                    loadedPages.push({ ...p, image: img });
+                }
+                pages = loadedPages;
+                if (pages.length > 0) switchPage(0);
+            } catch (e) {
+                console.error("Error loading data", e);
+            }
+        }
+
+        function clearAllData() {
+            if (confirm("Clear all images and layers?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                pages = [];
+                currentIndex = -1;
+                activeLayerIndex = -1;
+                canvas.classList.add('hidden');
+                document.getElementById('zoomOverlay').classList.add('hidden');
+                document.getElementById('placeholderText').classList.remove('hidden');
+                renderAll();
+            }
+        }
+
+        function setTab(tabId) {
+            document.querySelectorAll('.mobile-tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('text-blue-600'));
+            const content = document.getElementById('tab-' + tabId);
+            if (content) content.classList.add('active');
+            const nav = document.getElementById('nav-' + tabId);
+            if (nav) nav.classList.add('text-blue-600');
+            const viewport = document.getElementById('viewport');
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth < 1024) {
+                viewport.style.display = (tabId === 'canvas') ? 'flex' : 'none';
+                sidebar.style.display = (tabId !== 'canvas') ? 'flex' : 'none';
+            }
+        }
+
+        function adjustZoom(delta) {
+            zoomLevel = Math.min(Math.max(0.1, zoomLevel + delta), 5.0);
+            updateZoomUI();
+        }
+
+        function updateZoomUI() {
+            document.getElementById('zoomBadge').innerText = Math.round(zoomLevel * 100) + '%';
+            canvas.style.transform = `scale(${zoomLevel})`;
+            draw();
+        }
+
+        async function draw() {
+            if (currentIndex === -1) return;
+            const page = pages[currentIndex];
+            await document.fonts.ready;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(page.image, 0, 0);
+
+            page.layers.forEach((layer, idx) => {
+                const fontSize = layer.size * 2.5; 
+                ctx.font = `${layer.isBold ? 'bold' : 'normal'} ${fontSize}px ${layer.font}`;
+                ctx.textBaseline = 'middle';
+                const metrics = ctx.measureText(layer.text);
+                layer.width = metrics.width;
+                layer.height = fontSize;
+
+                if (idx === activeLayerIndex) {
+                    ctx.save();
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = Math.max(1, (fontSize * 0.05) / zoomLevel);
+                    ctx.strokeRect(layer.x - 5, layer.y - (layer.height/2) - 5, layer.width + 10, layer.height + 10);
+                    ctx.restore();
+                }
+                ctx.fillStyle = layer.color;
+                ctx.fillText(layer.text, layer.x, layer.y);
+            });
+        }
+
+        function switchPage(index) {
+            currentIndex = index;
+            const page = pages[currentIndex];
+            canvas.width = page.image.width;
+            canvas.height = page.image.height;
+            canvas.classList.remove('hidden');
+            document.getElementById('zoomOverlay').classList.remove('hidden');
+            document.getElementById('placeholderText').classList.add('hidden');
+            activeLayerIndex = page.layers.length > 0 ? 0 : -1;
+            const container = document.getElementById('canvasWrapper');
+            const ratio = Math.min((container.clientWidth - 40) / canvas.width, (container.clientHeight - 40) / canvas.height);
+            zoomLevel = Math.min(1.0, ratio);
+            updateZoomUI();
+            if (window.innerWidth < 1024) setTab('canvas');
+            renderAll();
+        }
+
+        function renderAll() {
+            renderThumbs();
+            renderLayersList();
+            updateEditorUI();
+            draw();
+            saveData();
+        }
+
+        function renderThumbs() {
+            const list = document.getElementById('thumbList');
+            list.innerHTML = "";
+            pages.forEach((p, idx) => {
+                const container = document.createElement('div');
+                container.className = "image-thumb-container";
+                const img = document.createElement('img');
+                img.src = p.dataUrl;
+                img.className = `image-thumb ${idx === currentIndex ? 'active' : ''}`;
+                img.onclick = () => switchPage(idx);
+                const label = document.createElement('span');
+                label.className = "thumb-label";
+                label.innerText = p.name || `Img ${idx + 1}`;
+                container.appendChild(img);
+                container.appendChild(label);
+                list.appendChild(container);
+            });
+            if (currentIndex !== -1) document.getElementById('imageNameEdit').value = pages[currentIndex].name;
+        }
+
+        function handleLayerTextInput(idx, newValue) {
+            if (currentIndex === -1) return;
+            pages[currentIndex].layers[idx].text = newValue;
+            if (idx === activeLayerIndex) {
+                document.getElementById('editContent').value = newValue;
+                const hyphenated = parseDotToHyphen(newValue);
+                if (hyphenated) document.getElementById('editDateOnly').value = hyphenated;
+            }
+            draw();
+            saveData();
+        }
+
+        function renderLayersList() {
+            const container = document.getElementById('layersContainer');
+            container.innerHTML = '';
+            if (currentIndex === -1) return;
+            pages[currentIndex].layers.forEach((l, idx) => {
+                const card = document.createElement('div');
+                card.className = `layer-card flex items-center gap-2 ${idx === activeLayerIndex ? 'active' : ''}`;
+                card.onclick = () => { activeLayerIndex = idx; updateEditorUI(); draw(); };
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = l.text;
+                input.className = "flex-grow bg-transparent border-none outline-none font-bold text-xs p-1 focus:ring-1 focus:ring-blue-300 rounded";
+                input.oninput = (e) => handleLayerTextInput(idx, e.target.value);
+                
+                const delBtn = document.createElement('button');
+                delBtn.innerText = 'DEL';
+                delBtn.className = "text-red-500 font-bold text-[10px] shrink-0 p-1";
+                delBtn.onclick = (e) => deleteLayer(e, idx);
+
+                card.appendChild(input);
+                card.appendChild(delBtn);
+                container.appendChild(card);
+            });
+        }
+
+        function deleteLayer(e, idx) {
+            e.stopPropagation();
+            pages[currentIndex].layers.splice(idx, 1);
+            activeLayerIndex = pages[currentIndex].layers.length > 0 ? 0 : -1;
+            renderAll();
+        }
+
+        function updateEditorUI() {
+            const editor = document.getElementById('styleEditor');
+            const fineTune = document.getElementById('fineTuneControls');
+            if (activeLayerIndex === -1) { 
+                editor.classList.add('hidden'); 
+                fineTune.classList.add('hidden');
+                return; 
+            }
+            editor.classList.remove('hidden');
+            fineTune.classList.remove('hidden');
+            const l = pages[currentIndex].layers[activeLayerIndex];
+            document.getElementById('editContent').value = l.text;
+            document.getElementById('editFont').value = l.font;
+            document.getElementById('editSize').value = Math.round(l.size);
+            document.getElementById('editColor').value = l.color;
+            document.getElementById('editBold').checked = l.isBold;
+            document.getElementById('sizeValueBadge').innerText = Math.round(l.size);
+            
+            const dateInput = document.getElementById('editDateOnly');
+            const hyphenated = parseDotToHyphen(l.text);
+            dateInput.value = hyphenated || "";
+        }
+
+        function changeFontSize(delta) {
+            if (activeLayerIndex === -1) return;
+            const input = document.getElementById('editSize');
+            let newValue = parseInt(input.value) + delta;
+            newValue = Math.max(parseInt(input.min), Math.min(parseInt(input.max), newValue));
+            input.value = newValue;
+            input.dispatchEvent(new Event('input'));
+        }
+
+        function handleDPadDown(dx, dy) {
+            if (activeLayerIndex === -1) return;
+            const move = () => {
+                const l = pages[currentIndex].layers[activeLayerIndex];
+                l.x += dx * (2 / zoomLevel);
+                l.y += dy * (2 / zoomLevel);
+                draw();
+                saveData();
+            };
+            move();
+            moveTimeout = setTimeout(() => { moveInterval = setInterval(move, 50); }, 250);
+        }
+
+        function handleDPadUp() {
+            clearTimeout(moveTimeout);
+            clearInterval(moveInterval);
+        }
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getMousePos(e);
+            draggingLayerIndex = -1;
+            const layers = pages[currentIndex].layers;
+            for (let i = layers.length - 1; i >= 0; i--) {
+                const l = layers[i];
+                if (pos.x >= l.x && pos.x <= l.x + l.width && pos.y >= l.y - l.height/2 && pos.y <= l.y + l.height/2) {
+                    draggingLayerIndex = i; activeLayerIndex = i;
+                    dragOffsetX = pos.x - l.x; dragOffsetY = pos.y - l.y;
+                    renderAll(); break;
+                }
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (draggingLayerIndex !== -1) {
+                const pos = getMousePos(e);
+                pages[currentIndex].layers[draggingLayerIndex].x = pos.x - dragOffsetX;
+                pages[currentIndex].layers[draggingLayerIndex].y = pos.y - dragOffsetY;
+                draw();
+            }
+        });
+
+        window.addEventListener('mouseup', () => { 
+            if (draggingLayerIndex !== -1) saveData();
+            draggingLayerIndex = -1;
+        });
+
+        document.getElementById('imageInput').onchange = (e) => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        pages.push({ 
+                            name: file.name.split('.')[0], image: img, dataUrl: ev.target.result, 
+                            layers: [{ text: 'New Text', x: img.width/2, y: img.height/2, size: 20, color: DEFAULT_COLOR, font: "'UN-Abhaya', sans-serif", isBold: false }] 
+                        });
+                        if (currentIndex === -1) switchPage(pages.length - 1); else renderAll();
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        document.getElementById('addLayerBtn').onclick = () => {
+            if (currentIndex === -1) return;
+            pages[currentIndex].layers.push({ text: 'New Text', x: canvas.width/2, y: canvas.height/2, size: 20, color: DEFAULT_COLOR, font: "'UN-Abhaya', sans-serif", isBold: false });
+            activeLayerIndex = pages[currentIndex].layers.length - 1;
+            renderAll();
+        };
+
+        function addNewDateLayer() {
+            if (currentIndex === -1) return;
+            const now = new Date();
+            const formattedDate = formatDateToDot(now);
+            pages[currentIndex].layers.push({ 
+                text: formattedDate, 
+                x: canvas.width/2, 
+                y: canvas.height/2, 
+                size: 15, 
+                color: DEFAULT_COLOR, // Set to #0000C8 (RGB 0 0 200)
+                font: "'Inter', sans-serif", 
+                isBold: false 
+            });
+            activeLayerIndex = pages[currentIndex].layers.length - 1;
+            renderAll();
+        }
+
+        document.getElementById('imageNameEdit').oninput = (e) => {
+            if (currentIndex !== -1) {
+                pages[currentIndex].name = e.target.value;
+                renderThumbs();
+                saveData();
+            }
+        };
+
+        document.getElementById('editDateOnly').oninput = (e) => {
+            if (activeLayerIndex === -1 || !e.target.value) return;
+            const date = new Date(e.target.value);
+            const formatted = formatDateToDot(date);
+            handleLayerTextInput(activeLayerIndex, formatted);
+            renderLayersList();
+        };
+
+        ['editContent', 'editFont', 'editSize', 'editColor', 'editBold'].forEach(id => {
+            document.getElementById(id).oninput = async (e) => {
+                if (activeLayerIndex === -1) return;
+                const l = pages[currentIndex].layers[activeLayerIndex];
+                if (id === 'editContent') l.text = e.target.value;
+                if (id === 'editFont') l.font = e.target.value;
+                if (id === 'editBold') l.isBold = e.target.checked;
+                if (id === 'editSize') { 
+                    l.size = parseInt(e.target.value); 
+                    document.getElementById('sizeValueBadge').innerText = l.size; 
+                }
+                if (id === 'editColor') l.color = e.target.value;
+                await draw();
+                renderLayersList(); 
+                saveData();
+            };
+        });
+
+        document.getElementById('downloadBtn').onclick = () => {
+            if (currentIndex === -1) return;
+            const oldIdx = activeLayerIndex;
+            activeLayerIndex = -1;
+            draw().then(() => {
+                const link = document.createElement('a');
+                link.download = `${pages[currentIndex].name || 'overlay'}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+                activeLayerIndex = oldIdx;
+                draw();
+            });
+        };
+
+        document.getElementById('shareBtn').onclick = async () => {
+            if (currentIndex === -1) return;
+            const oldIdx = activeLayerIndex;
+            activeLayerIndex = -1;
+            await draw();
+            
+            canvas.toBlob(async (blob) => {
+                activeLayerIndex = oldIdx;
+                draw();
+                if (!blob) return;
+                const file = new File([blob], `${pages[currentIndex].name || 'overlay'}.jpg`, { type: 'image/jpeg' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try { await navigator.share({ files: [file], title: pages[currentIndex].name || 'Overlay Image' }); } catch (error) {}
+                }
+            }, 'image/jpeg', 0.95);
+        };
+
+        window.onload = async () => {
+            await loadData();
+            document.getElementById('loadingOverlay').style.display = 'none';
+            if (window.innerWidth < 1024) setTab('images');
+        };
+    </script>
+</body>
+</html>
