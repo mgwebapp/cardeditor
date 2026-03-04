@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dynamic Multi-Layer Overlayer (GitHub Compatible)</title>
+    <title>Dynamic Multi-Layer Overlayer</title>
     <!-- Web Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,900;1,400&family=Roboto+Mono:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* System Theme & Variables */
         :root {
@@ -17,13 +17,19 @@
             --border: #e2e8f0;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --date-blue: #0000C8; /* Requested Color */
+            --success: #10b981;
         }
 
-        /* Sinhala Fonts */
+        /* Sinhala Fonts (Akasa.lk CDN) */
         @font-face { font-family: 'UN-Abhaya'; src: url('https://font.akasa.lk/fonts/UN-Abhaya.ttf') format('truetype'); font-display: swap; }
         @font-face { font-family: 'UN-Samantha'; src: url('https://font.akasa.lk/fonts/UN-Samantha.ttf') format('truetype'); font-display: swap; }
         @font-face { font-family: 'UN-Ganganee'; src: url('https://font.akasa.lk/fonts/UN-Ganganee.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Derana'; src: url('https://font.akasa.lk/fonts/UN-Derana.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Basuru'; src: url('https://font.akasa.lk/fonts/UN-Basuru.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Bindumathi'; src: url('https://font.akasa.lk/fonts/UN-Bindumathi.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Gemunu'; src: url('https://font.akasa.lk/fonts/UN-Gemunu.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Isiwara'; src: url('https://font.akasa.lk/fonts/UN-Isiwara.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'UN-Rajantha'; src: url('https://font.akasa.lk/fonts/UN-Rajantha.ttf') format('truetype'); font-display: swap; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -36,7 +42,6 @@
             flex-direction: column;
         }
 
-        /* Layout */
         .app-wrapper {
             display: flex;
             flex-direction: column;
@@ -59,7 +64,6 @@
             min-height: 0;
         }
 
-        /* Sidebar Styling */
         .sidebar {
             width: 320px;
             display: flex;
@@ -88,7 +92,6 @@
             justify-content: space-between;
         }
 
-        /* Viewport Styling */
         .viewport {
             flex-grow: 1;
             background: var(--bg-canvas-area);
@@ -106,6 +109,7 @@
             align-items: center;
             padding: 20px;
             overflow: auto;
+            position: relative;
         }
 
         canvas {
@@ -113,9 +117,9 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             transform-origin: center center;
             cursor: move;
+            outline: none;
         }
 
-        /* Controls UI */
         .btn {
             padding: 10px 16px;
             border-radius: 12px;
@@ -124,11 +128,29 @@
             font-weight: 700;
             cursor: pointer;
             transition: transform 0.1s;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         .btn:active { transform: scale(0.95); }
+        .btn:focus { outline: none; }
+        
         .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
         .btn-outline { background: #f8fafc; border: 1px solid var(--border); color: var(--text-main); }
-        .btn-danger { color: #ef4444; background: none; font-size: 10px; padding: 0; }
+        
+        .btn-danger { 
+            color: #ef4444; 
+            background: none; 
+            font-size: 10px; 
+            padding: 0; 
+            border: none;
+            cursor: pointer;
+            outline: none !important;
+        }
+        .btn-danger:focus { outline: none !important; }
 
         .input-text {
             width: 100%;
@@ -140,23 +162,44 @@
             outline: none;
         }
 
-        /* Layers & Thumbs */
         .thumb-strip {
             display: flex;
-            gap: 10px;
-            overflow-x: auto;
+            flex-direction: column;
+            gap: 8px;
             padding: 5px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .thumb-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .thumb-item.active {
+            border-color: var(--primary);
+            background: #eff6ff;
         }
         .thumb-box {
-            width: 70px;
-            height: 70px;
+            width: 40px;
+            height: 40px;
             object-fit: cover;
-            border-radius: 10px;
-            cursor: pointer;
-            border: 2px solid transparent;
+            border-radius: 6px;
             flex-shrink: 0;
         }
-        .thumb-box.active { border-color: var(--primary); }
+        .thumb-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .layer-item {
             display: flex;
@@ -168,10 +211,22 @@
             border-radius: 10px;
             margin-bottom: 5px;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .layer-item.active { border-color: var(--primary); background: #eff6ff; }
+        .layer-item.active { border-color: var(--primary); background: #eff6ff; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
 
-        /* Floating Widgets */
+        .layer-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 900;
+            width: 100%;
+            color: var(--text-main);
+            padding: 4px 0;
+        }
+
         .zoom-widget {
             position: absolute;
             top: 15px;
@@ -187,37 +242,59 @@
             z-index: 50;
         }
 
-        .dpad {
+        .layer-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            position: relative;
+            outline: none;
+        }
+        .layer-action-btn:hover { opacity: 1; }
+        .layer-action-btn:focus { outline: none; }
+
+        .date-trigger-input {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: grid;
-            grid-template-areas: ". up ." "left . right" ". down .";
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Stepper Buttons for Slider */
+        .slider-control-group {
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
-        .dpad-btn {
-            width: 44px;
-            height: 44px;
-            background: white;
-            border-radius: 10px;
+        .stepper-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            border: 1px solid var(--border);
+            font-size: 16px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            outline: none;
         }
+        .stepper-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
 
-        /* Utilities */
         .hidden { display: none !important; }
         .spin { animation: rotate 1s linear infinite; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
-
-        @media (max-width: 1024px) {
-            .sidebar { display: none; }
-            .sidebar.mobile-active { display: flex; position: fixed; inset: 0; z-index: 100; width: 100%; margin: 0; }
-        }
+        
+        select optgroup { font-weight: 900; color: var(--primary); background: #f1f5f9; }
+        select option { font-weight: normal; color: var(--text-main); background: white; }
     </style>
 </head>
 <body>
@@ -231,107 +308,124 @@
         <header>
             <div>
                 <h1 style="font-size: 1.25rem; font-weight: 900; letter-spacing: -0.5px;">OVERLAYER <span style="color:var(--primary)">PRO</span></h1>
-                <p style="font-size: 9px; font-weight: 800; color: var(--text-muted);">AUTO-SAVING TO BROWSER</p>
+                <p style="font-size: 9px; font-weight: 800; color: var(--text-muted);">IMAGE COMPOSITOR</p>
             </div>
             <div style="display:flex; gap:8px;">
-                <button id="shareBtn" class="btn btn-outline">SHARE</button>
-                <button id="downloadBtn" class="btn btn-primary">EXPORT JPG</button>
+                <button id="shareBtn" class="btn btn-success">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                    SHARE
+                </button>
+                <button id="downloadBtn" class="btn btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    DOWNLOAD
+                </button>
             </div>
         </header>
 
         <div class="main-stage">
             <div class="sidebar" id="sidebar">
-                <!-- Assets Panel -->
                 <div class="panel">
                     <div class="section-title">
                         FILES
-                        <button onclick="resetApp()" class="btn-danger">RESET ALL</button>
+                        <button onclick="resetApp()" class="btn-danger">RESET</button>
                     </div>
-                    <label class="btn btn-primary" style="display:block; text-align:center;">
+                    <label class="btn btn-primary" style="display:block; text-align:center; margin-bottom: 10px;">
                         + UPLOAD IMAGES
                         <input type="file" id="imageInput" multiple accept="image/*" class="hidden">
                     </label>
                     <div id="thumbList" class="thumb-strip"></div>
                 </div>
 
-                <!-- Editor Panel -->
                 <div class="panel" id="editorPanel">
                     <div class="section-title">
-                        TEXT LAYERS
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="addDateLayer()" class="btn btn-outline" style="padding:4px 8px;">+ Date</button>
+                        LAYERS
+                        <div style="display:flex; gap:5px; align-items: center;">
                             <button onclick="addTextLayer()" class="btn btn-outline" style="padding:4px 8px;">+ Text</button>
+                            <button onclick="addDateLayer()" class="btn btn-outline" style="padding:4px 8px; background: #f0f9ff; border-color: #bae6fd; color: #0369a1;">+ Date</button>
                         </div>
                     </div>
                     
                     <div id="layerEditor" class="hidden">
-                        <textarea id="editContent" class="input-text" rows="2"></textarea>
-                        
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
-                            <input type="date" id="editDate" class="input-text">
+                        <div style="display:grid; grid-template-columns: 3fr 1fr; gap:8px; margin-bottom:10px;">
                             <select id="editFont" class="input-text">
-                                <option value="'Inter', sans-serif">Inter (English)</option>
-                                <option value="'UN-Abhaya', serif">Abhaya (Sinhala)</option>
-                                <option value="'UN-Samantha', serif">Samantha (Sinhala)</option>
-                                <option value="'Bebas Neue', cursive">Bebas (Bold)</option>
+                                <optgroup label="SINHALA UNICODE">
+                                    <option value="'UN-Derana', serif">UN-Derana</option>
+                                    <option value="'UN-Abhaya', serif">UN-Abhaya</option>
+                                    <option value="'UN-Samantha', serif">UN-Samantha</option>
+                                    <option value="'UN-Ganganee', serif">UN-Ganganee</option>
+                                    <option value="'UN-Basuru', serif">UN-Basuru</option>
+                                    <option value="'UN-Bindumathi', serif">UN-Bindumathi</option>
+                                    <option value="'UN-Gemunu', serif">UN-Gemunu</option>
+                                    <option value="'UN-Isiwara', serif">UN-Isiwara</option>
+                                    <option value="'UN-Rajantha', serif">UN-Rajantha</option>
+                                </optgroup>
+                                <optgroup label="ENGLISH FONTS">
+                                    <option value="'Inter', sans-serif">Inter (Sans)</option>
+                                    <option value="'Montserrat', sans-serif">Montserrat (Modern)</option>
+                                    <option value="'Bebas Neue', cursive">Bebas (Condensed)</option>
+                                    <option value="'Playfair Display', serif">Playfair (Serif)</option>
+                                    <option value="'Roboto Mono', monospace">Roboto (Mono)</option>
+                                    <option value="'Dancing Script', cursive">Dancing (Script)</option>
+                                </optgroup>
                             </select>
+                            <input type="color" id="editColor" class="input-text" style="height:41px; padding:2px; cursor: pointer;">
                         </div>
 
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <input type="color" id="editColor" style="width:40px; height:40px; border-radius:8px; cursor:pointer; border:1px solid #ddd;">
-                            <div style="flex-grow:1">
-                                <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:bold; margin-bottom:5px;">
-                                    <span>TEXT SIZE</span>
-                                    <span id="sizeBadge">20</span>
-                                </div>
-                                <input type="range" id="editSize" min="5" max="200" style="width:100%;">
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:bold;">
+                                <span>TEXT SIZE</span>
+                                <span id="sizeBadge">14</span>
+                            </div>
+                            <div class="slider-control-group">
+                                <button onclick="stepSize(-1)" class="stepper-btn">-</button>
+                                <input type="range" id="editSize" min="5" max="250" style="flex-grow:1;">
+                                <button onclick="stepSize(1)" class="stepper-btn">+</button>
                             </div>
                         </div>
                     </div>
 
-                    <div id="layerStack" style="margin-top:15px; max-height: 250px; overflow-y: auto;"></div>
+                    <div id="layerStack" style="margin-top:15px; max-height: 400px; overflow-y: auto;"></div>
                 </div>
             </div>
 
             <div class="viewport">
                 <div class="zoom-widget" id="zoomWidget" class="hidden">
-                    <button onclick="zoom(-0.1)" style="border:none; background:none; font-weight:bold; cursor:pointer; padding:5px;">-</button>
+                    <button onclick="zoom(-0.1)" style="border:none; background:none; font-weight:bold; cursor:pointer;">-</button>
                     <span id="zoomLabel">100%</span>
-                    <button onclick="zoom(0.1)" style="border:none; background:none; font-weight:bold; cursor:pointer; padding:5px;">+</button>
+                    <button onclick="zoom(0.1)" style="border:none; background:none; font-weight:bold; cursor:pointer;">+</button>
                 </div>
 
                 <div class="canvas-container" id="canvasScroll">
                     <div id="emptyMsg" style="color:var(--text-muted); text-align:center;">
-                        <p style="font-weight:900; font-size:1.5rem; opacity:0.3;">NO ASSETS LOADED</p>
-                        <p style="font-size:12px; font-weight:bold;">Upload images to start designing</p>
+                        <p style="font-weight:900; font-size:1.5rem; opacity:0.3;">EMPTY STAGE</p>
                     </div>
-                    <canvas id="canvas" class="hidden"></canvas>
-                </div>
-
-                <div id="nudgeControls" class="dpad hidden">
-                    <button class="dpad-btn" style="grid-area:up" onmousedown="nudge(0,-1)" onmouseup="stopNudge()">↑</button>
-                    <button class="dpad-btn" style="grid-area:left" onmousedown="nudge(-1,0)" onmouseup="stopNudge()">←</button>
-                    <button class="dpad-btn" style="grid-area:right" onmousedown="nudge(1,0)" onmouseup="stopNudge()">→</button>
-                    <button class="dpad-btn" style="grid-area:down" onmousedown="nudge(0,1)" onmouseup="stopNudge()">↓</button>
+                    <canvas id="canvas" class="hidden" tabindex="0"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const DB_KEY = 'overlay_pro_data_v2';
-        const DEFAULT_DATE_COLOR = '#0000C8'; // Your specific requirement
-        
+        const DB_KEY = 'overlay_pro_v9_sync_date';
+        const MAX_SAVED_PROJECTS = 5;
+        // Default Settings
+        const DEFAULT_SIZE = 14;
+        const DEFAULT_COLOR = '#0000C8';
+        const DEFAULT_FONT = "'UN-Derana', serif";
+
         let projects = [];
         let curIdx = -1;
         let activeLayer = -1;
         let zoomLevel = 1.0;
-        let nudgeTimer;
+        let isDragging = false;
+        let startX, startY;
+        
+        let lastLayerCount = -1;
+        let lastActiveLayer = -1;
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        // Persistence Logic
         async function load() {
             const saved = localStorage.getItem(DB_KEY);
             if (saved) {
@@ -344,19 +438,27 @@
                         projects.push({...p, imgElement: img});
                     }
                     if (projects.length > 0) selectProject(0);
-                } catch (e) { console.error("Load failed", e); }
+                } catch (e) { console.error(e); }
             }
             document.getElementById('loading').style.display = 'none';
         }
 
         function save() {
-            const cleanData = projects.map(p => ({
+            if (curIdx === -1) return;
+            const projectsToSave = projects.slice(-MAX_SAVED_PROJECTS);
+            const cleanData = projectsToSave.map(p => ({
                 name: p.name, dataUrl: p.dataUrl, layers: p.layers
             }));
-            localStorage.setItem(DB_KEY, JSON.stringify(cleanData));
+            try {
+                localStorage.setItem(DB_KEY, JSON.stringify(cleanData));
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    const minimalData = [cleanData[cleanData.length - 1]];
+                    try { localStorage.setItem(DB_KEY, JSON.stringify(minimalData)); } catch(ie) {}
+                }
+            }
         }
 
-        // Project Management
         function selectProject(idx) {
             curIdx = idx;
             const p = projects[idx];
@@ -366,17 +468,16 @@
             document.getElementById('emptyMsg').classList.add('hidden');
             document.getElementById('zoomWidget').classList.remove('hidden');
             activeLayer = p.layers.length > 0 ? 0 : -1;
-            render();
+            render(true);
         }
 
-        async function draw() {
+        function draw() {
             if (curIdx === -1) return;
             const p = projects[curIdx];
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(p.imgElement, 0, 0);
 
-            for (let i = 0; i < p.layers.length; i++) {
-                const l = p.layers[i];
+            p.layers.forEach((l, i) => {
                 const realSize = l.size * 2.5;
                 ctx.font = `${realSize}px ${l.font}`;
                 ctx.fillStyle = l.color;
@@ -387,19 +488,22 @@
                 l.h = realSize;
 
                 if (i === activeLayer) {
+                    ctx.save();
                     ctx.strokeStyle = '#2563eb';
-                    ctx.lineWidth = 3 / zoomLevel;
-                    ctx.strokeRect(l.x - 5, l.y - realSize/2 - 5, l.w + 10, realSize + 10);
+                    ctx.lineWidth = 4 / zoomLevel;
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(l.x - 10, l.y - realSize/2 - 10, l.w + 20, realSize + 20);
+                    ctx.restore();
                 }
                 ctx.fillText(l.text, l.x, l.y);
-            }
+            });
         }
 
-        function render() {
-            updateThumbs();
-            updateLayersList();
-            updateEditorPanel();
+        function render(forceRebuild = false) {
             draw();
+            updateThumbs();
+            updateLayersList(forceRebuild);
+            updateEditorPanel();
             save();
         }
 
@@ -407,71 +511,159 @@
             const strip = document.getElementById('thumbList');
             strip.innerHTML = '';
             projects.forEach((p, i) => {
+                const item = document.createElement('div');
+                item.className = `thumb-item ${i === curIdx ? 'active' : ''}`;
+                item.onclick = () => selectProject(i);
+
                 const img = document.createElement('img');
                 img.src = p.dataUrl;
-                img.className = `thumb-box ${i === curIdx ? 'active' : ''}`;
-                img.onclick = () => selectProject(i);
-                strip.appendChild(img);
+                img.className = 'thumb-box';
+                
+                const name = document.createElement('span');
+                name.className = 'thumb-name';
+                name.innerText = p.name || `Image ${i + 1}`;
+
+                item.appendChild(img);
+                item.appendChild(name);
+                strip.appendChild(item);
             });
         }
 
-        function updateLayersList() {
+        function updateLayersList(force = false) {
             const list = document.getElementById('layerStack');
+            if (curIdx === -1) { list.innerHTML = ''; return; }
+            
+            const layers = projects[curIdx].layers;
+            if (!force && lastLayerCount === layers.length && lastActiveLayer === activeLayer) return; 
+
             list.innerHTML = '';
-            if (curIdx === -1) return;
-            projects[curIdx].layers.forEach((l, i) => {
+            layers.forEach((l, i) => {
                 const item = document.createElement('div');
                 item.className = `layer-item ${i === activeLayer ? 'active' : ''}`;
-                item.innerHTML = `<span style="font-size:11px; font-weight:900; flex-grow:1;">${l.text.substring(0, 15)}</span>`;
-                item.onclick = () => { activeLayer = i; render(); };
                 
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'layer-input';
+                input.value = l.text;
+                
+                input.onfocus = () => {
+                    if (activeLayer !== i) {
+                        activeLayer = i;
+                        lastActiveLayer = i;
+                        render(true);
+                    }
+                };
+                input.oninput = (e) => {
+                    l.text = e.target.value;
+                    draw(); 
+                    save();
+                };
+
+                item.onclick = () => input.focus();
+                item.appendChild(input);
+
+                if (l.isDate) {
+                    const calBtn = document.createElement('div');
+                    calBtn.className = 'layer-action-btn';
+                    calBtn.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <input type="date" class="date-trigger-input" value="${l.text.split('.').join('-')}">
+                    `;
+                    
+                    const picker = calBtn.querySelector('input');
+                    picker.onclick = (e) => e.stopPropagation();
+                    picker.oninput = (e) => {
+                        if (!e.target.value) return;
+                        l.text = e.target.value.split('-').join('.');
+                        activeLayer = i;
+                        render(true);
+                    };
+                    
+                    item.appendChild(calBtn);
+                }
+
                 const del = document.createElement('button');
                 del.innerHTML = '×';
-                del.style = "border:none; background:none; color:red; font-weight:bold; cursor:pointer; padding:5px;";
-                del.onclick = (e) => { e.stopPropagation(); projects[curIdx].layers.splice(i, 1); activeLayer = -1; render(); };
-                
+                del.className = "btn-danger";
+                del.style.padding = "0 8px";
+                del.style.fontSize = "16px";
+                del.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    projects[curIdx].layers.splice(i, 1); 
+                    activeLayer = -1; 
+                    render(true); 
+                };
                 item.appendChild(del);
                 list.appendChild(item);
             });
+
+            lastLayerCount = layers.length;
+            lastActiveLayer = activeLayer;
         }
 
         function updateEditorPanel() {
             const ed = document.getElementById('layerEditor');
-            const nudge = document.getElementById('nudgeControls');
-            if (activeLayer === -1) { ed.classList.add('hidden'); nudge.classList.add('hidden'); return; }
-            
+            if (activeLayer === -1) { ed.classList.add('hidden'); return; }
             ed.classList.remove('hidden');
-            nudge.classList.remove('hidden');
             const l = projects[curIdx].layers[activeLayer];
-            document.getElementById('editContent').value = l.text;
             document.getElementById('editFont').value = l.font;
             document.getElementById('editSize').value = l.size;
             document.getElementById('sizeBadge').innerText = l.size;
             document.getElementById('editColor').value = l.color;
         }
 
-        // Layer Logic
-        function addTextLayer() {
-            if (curIdx === -1) return;
-            projects[curIdx].layers.push({
-                text: "Sample Text", x: canvas.width/2, y: canvas.height/2, size: 40, color: "#000000", font: "'Inter', sans-serif"
-            });
-            activeLayer = projects[curIdx].layers.length - 1;
-            render();
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
         }
 
-        function addDateLayer() {
-            if (curIdx === -1) return;
-            const d = new Date();
-            const val = `${d.getFullYear()}.${(d.getMonth()+1).toString().padStart(2,'0')}.${d.getDate().toString().padStart(2,'0')}`;
-            projects[curIdx].layers.push({
-                text: val, x: canvas.width/2, y: canvas.height/2, size: 30, color: DEFAULT_DATE_COLOR, font: "'Inter', sans-serif"
-            });
-            activeLayer = projects[curIdx].layers.length - 1;
-            render();
-        }
+        canvas.addEventListener('mousedown', (e) => {
+            const coords = getCoords(e);
+            const p = projects[curIdx];
+            if (!p) return;
+            let found = -1;
+            for (let i = p.layers.length - 1; i >= 0; i--) {
+                const l = p.layers[i];
+                const rs = l.size * 2.5;
+                if (coords.x >= l.x - 10 && coords.x <= l.x + l.w + 10 &&
+                    coords.y >= l.y - rs/2 - 10 && coords.y <= l.y + rs/2 + 10) {
+                    found = i;
+                    break;
+                }
+            }
+            if (found !== activeLayer) {
+                activeLayer = found;
+                render(true);
+            }
+            if (found !== -1) {
+                isDragging = true;
+                startX = coords.x - p.layers[found].x;
+                startY = coords.y - p.layers[found].y;
+            }
+        });
 
-        // Input Listeners
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const coords = getCoords(e);
+            projects[curIdx].layers[activeLayer].x = coords.x - startX;
+            projects[curIdx].layers[activeLayer].y = coords.y - startY;
+            draw();
+        });
+
+        window.addEventListener('mouseup', () => { 
+            if (isDragging) { isDragging = false; save(); }
+        });
+
         document.getElementById('imageInput').onchange = (e) => {
             Array.from(e.target.files).forEach(file => {
                 const reader = new FileReader();
@@ -480,9 +672,9 @@
                     img.onload = () => {
                         projects.push({
                             name: file.name, dataUrl: ev.target.result, imgElement: img,
-                            layers: [{ text: "Header Text", x: img.width/2, y: img.height/4, size: 50, color: "#000000", font: "'Bebas Neue', cursive" }]
+                            layers: [{ text: "NEW TEXT", x: img.width/2, y: img.height/2, size: DEFAULT_SIZE, color: DEFAULT_COLOR, font: DEFAULT_FONT }]
                         });
-                        if (curIdx === -1) selectProject(0); else render();
+                        if (curIdx === -1) selectProject(0); else selectProject(projects.length - 1);
                     };
                     img.src = ev.target.result;
                 };
@@ -490,65 +682,103 @@
             });
         };
 
-        ['editContent', 'editFont', 'editSize', 'editColor'].forEach(id => {
+        function addTextLayer() {
+            if (curIdx === -1) return;
+            projects[curIdx].layers.push({ text: "New Text", x: canvas.width/2, y: canvas.height/2, size: DEFAULT_SIZE, color: DEFAULT_COLOR, font: DEFAULT_FONT, isDate: false });
+            activeLayer = projects[curIdx].layers.length - 1;
+            render(true);
+        }
+
+        function addDateLayer() {
+            if (curIdx === -1) return;
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const formatted = `${y}.${m}.${d}`;
+            
+            projects[curIdx].layers.push({ 
+                text: formatted, 
+                x: canvas.width/2, 
+                y: canvas.height/2, 
+                size: DEFAULT_SIZE, 
+                color: DEFAULT_COLOR, 
+                font: DEFAULT_FONT,
+                isDate: true
+            });
+            activeLayer = projects[curIdx].layers.length - 1;
+            render(true);
+        }
+
+        function stepSize(val) {
+            if (activeLayer === -1) return;
+            const l = projects[curIdx].layers[activeLayer];
+            l.size = Math.max(5, Math.min(250, parseInt(l.size) + val));
+            document.getElementById('editSize').value = l.size;
+            document.getElementById('sizeBadge').innerText = l.size;
+            draw();
+            save();
+        }
+
+        ['editFont', 'editSize', 'editColor'].forEach(id => {
             document.getElementById(id).oninput = (e) => {
                 if (activeLayer === -1) return;
                 const l = projects[curIdx].layers[activeLayer];
-                if (id === 'editContent') l.text = e.target.value;
                 if (id === 'editFont') l.font = e.target.value;
                 if (id === 'editColor') l.color = e.target.value;
-                if (id === 'editSize') { l.size = e.target.value; document.getElementById('sizeBadge').innerText = l.size; }
+                if (id === 'editSize') {
+                    l.size = e.target.value;
+                    document.getElementById('sizeBadge').innerText = l.size;
+                }
                 draw();
                 save();
             };
         });
 
-        document.getElementById('editDate').onchange = (e) => {
-            if (activeLayer === -1) return;
-            const parts = e.target.value.split('-');
-            if (parts.length === 3) {
-                projects[curIdx].layers[activeLayer].text = `${parts[0]}.${parts[1]}.${parts[2]}`;
-                render();
-            }
-        };
-
-        // View Manipulation
         function zoom(v) {
             zoomLevel = Math.max(0.1, Math.min(4, zoomLevel + v));
             canvas.style.transform = `scale(${zoomLevel})`;
             document.getElementById('zoomLabel').innerText = Math.round(zoomLevel * 100) + '%';
         }
 
-        function nudge(dx, dy) {
-            if (activeLayer === -1) return;
-            const move = () => {
-                projects[curIdx].layers[activeLayer].x += dx * 4;
-                projects[curIdx].layers[activeLayer].y += dy * 4;
-                draw();
-            };
-            move();
-            nudgeTimer = setInterval(move, 50);
-        }
-        function stopNudge() { clearInterval(nudgeTimer); save(); }
-
-        // Export
-        document.getElementById('downloadBtn').onclick = () => {
+        async function exportImage(type = 'download') {
             if (curIdx === -1) return;
             const old = activeLayer;
             activeLayer = -1;
             draw();
-            const link = document.createElement('a');
-            link.download = `design_${Date.now()}.jpg`;
-            link.href = canvas.toDataURL('image/jpeg', 0.95);
-            link.click();
+            
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
             activeLayer = old;
             draw();
-        };
 
-        function resetApp() {
-            if (confirm("Reset everything?")) { localStorage.removeItem(DB_KEY); location.reload(); }
+            if (type === 'share' && navigator.share) {
+                try {
+                    const res = await fetch(dataUrl);
+                    const blob = await res.blob();
+                    const file = new File([blob], `overlay_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file]
+                        });
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Share failed:', err);
+                }
+            }
+            
+            // Fallback to download
+            const link = document.createElement('a');
+            link.download = `overlay_${Date.now()}.jpg`;
+            link.href = dataUrl;
+            link.click();
         }
 
+        document.getElementById('downloadBtn').onclick = () => exportImage('download');
+        document.getElementById('shareBtn').onclick = () => exportImage('share');
+
+        function resetApp() { if (confirm("Clear projects?")) { localStorage.removeItem(DB_KEY); location.reload(); } }
         window.onload = load;
     </script>
 </body>
